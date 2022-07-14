@@ -5,10 +5,11 @@ const userControllers = require('../controllers/user.controller')
 const auth = require('../middleware/auth')
 const router = new express.Router()
 const { validate } = require('../validator/express.validator')
+const { validateReq } = require('../../public/utils')
 
-router.post('/register', validate("registerUser"), userControllers.registerUser)
+router.post('/register', validate("registerUser"), validateReq, userControllers.registerUser)
 router.post('/verifyEmail/:userid/:token', userControllers.verifyUserEmail)
-router.post('/users/login', validate("loginUser"), userControllers.loginUser)
+router.post('/users/login', validate("loginUser"), validateReq, userControllers.loginUser)
 router.post('/users/logout', auth, userControllers.logoutUser)
 router.get('/users/me', auth, userControllers.readUser)
 
@@ -26,21 +27,8 @@ const upload = multer({
         cb(undefined, true)
     }
 })
-router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
-    req.user.avatar = req.file.buffer
-    await req.user.save()
-    res.send()
-}, (error, req, res, next) => {
-    res.status(400).send({ error: error.message })
-})
-
-router.patch('/users/me/avatar/update', auth, upload.single('avatar'), async (req, res) => {
-    req.user.avatar = req.file.buffer
-    await req.user.save()
-    res.send()
-}, (error, req, res, next) => {
-    res.status(400).send({ error: error.message })
-})
+router.post('/users/me/avatar', auth, upload.single('avatar'), userControllers.uploadAvatar)
+router.patch('/users/me/avatar/update', auth, upload.single('avatar'), userControllers.updateAvatar)
 
 // forgot password 
 router.post('/sendForgotPasswordLink', validate("sendForgotPasswordLink"),userControllers.sendResetPasswordLink)

@@ -2,8 +2,9 @@ const nodemailer = require('nodemailer')
 const { hashSync, compareSync } = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const User = require('../models/user')
+const UserSession = require('../models/userSession.model')
 const HTTP = require('../../constants/responseCode.constant')
-const { encryptUserModel } = require('../../public/utils')
+const { encryptUserModel, createSessionAndJwtToken } = require('../../public/utils')
 const { sendWelcomeEmail, sendOTPEmail, sendVerifyEmail } = require('../emails/account')
 
 const registerUser = async (req, res) => {
@@ -62,7 +63,7 @@ const registerUser = async (req, res) => {
         }
     } catch(e) {
         console.log(e)
-        return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
+        return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
     }
 }
 
@@ -70,41 +71,108 @@ const verifyUserEmail = async (req, res) => {
     try {
         const { userid, token } = req.params
         if(!userid || !token) {
-            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.NOT_FOUND, 'message': 'Something went wrong!', data: {} }) 
+            return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.NOT_FOUND, 'message': 'Something went wrong!', data: {} }) 
         }
         const existsUser = await User.findOne({_id: userid, isVerified: false})
         if (!existsUser) {
-            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.CONFLICT, 'message': 'User already verified!', data: {} })
+            return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.CONFLICT, 'message': 'User already verified!', data: {} })
         } else {
             try {
+                const secret = process.env.JWT_SECRET + existsUser.password
+                const isTokenVerified = jwt.verify(token, secret)
+                const userData = await User.findOneAndUpdate({ _id: userid, isVerified: false }, { isVerified: true }, { new: true })
+                if(!userData) {
+                    return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.BAD_REQUEST, 'message': 'Unable to store data!', data: {} })
+                }
+
+                // generate JWT token and session here 
+                const authToken = await createSessionAndJwtToken(userData)
+                return res.status(HTTP.SUCCESS).send({ 'status': true, 'code': HTTP.SUCCESS, 'message': 'Verification Successful!', 'data': {
+                    userData: {
+                        id: userData._id,
+                        email: userData.email,
+                        name: userData.name,
+                        phoneNo: userData.phoneNo
+                    },
+                    token: "Bearer " + authToken
+                } })
+                
 
             } catch (e) {
-                
+                console.log(e)
+                return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.BAD_REQUEST, 'message': 'Verification link has expired!', data: {} })
             }
         }
     } catch(e) {
-
+        console.log(e)
+        return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
     }
 }
 
 const loginUser = async (req, res) => {
-    try {
-        const user = await User.findByCredentials(req.body.email, req.body.password)
-        const token = await user.generateAuthToken()
-        res.send({ user, token })
+    // try {
+    //     const user = await User.findByCredentials(req.body.email, req.body.password)
+    //     const token = await user.generateAuthToken()
+    //     res.send({ user, token })
         
+    // } catch(e) {
+    //     res.status(400).send({'message': 'Invalid details'})
+    // }
+
+    try {
+        const { email, password } = req.body
+        const encData = await encryptUserModel({ email })
+        const user = await User.findOne({ email: encData.email })
+
+        if (!user) {
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, 'message': 'Email or password is incorrect!', data: {} })
+        }
+        if (user.password === undefined || !compareSync(password, user.password)) {
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, 'message': 'Email or password is incorrect!', data: {} })
+        }
+
+        // jwt token and store session data
+
+        const token = await createSessionAndJwtToken(user)
+        return res.status(HTTP.SUCCESS).send({ 'status': true, 'code': HTTP.SUCCESS, 'message': 'Logged In Successfully!', 'data': {
+            userData: {
+                id: userData._id,
+                email: userData.email,
+                name: userData.name,
+                phoneNo: userData.phoneNo
+            },
+            token: "Bearer " + authToken
+        } })
+
+
     } catch(e) {
-        res.status(400).send({'message': 'Invalid details'})
+        console.log(e)
+        return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
     }
 }
 
 const logoutUser = async (req, res) => {
+    // try {
+    //     req.user.tokens = []
+    //     await req.user.save()
+    //     res.send()
+    // } catch(e) {
+    //     res.status(500).send({'message': 'Something went wrong'})
+    // }
+
     try {
-        req.user.tokens = []
-        await req.user.save()
-        res.send()
+        if (req.user) {
+            const userData = await UserSession.findOneAndUpdate({ _id: req.user.sessionId, userid: req.user._id, isActive: true }, { isActive: false }, { new: true})
+            if (!userData) {
+                return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, 'message': 'User session is invalid', data: {} })
+            }
+            return res.status(HTTP.SUCCESS).send({ "status": true, 'code': HTTP.SUCCESS, 'message': 'User logged out successfully', data: {} })
+        } else {
+            return res.status(HTTP.BAD_REQUEST).send({ "status": false, 'code': HTTP.BAD_REQUEST, 'message': 'Please authenticate', data: {} })
+        }
     } catch(e) {
-        res.status(500).send({'message': 'Something went wrong'})
+        console.log(e)
+        return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
     }
 }
 
@@ -214,7 +282,27 @@ const resetPassword = async (req, res) => {
             res.send("Passwords don't match")
         }
     } catch(e) {
-        res.status(400).send({  }) 
+        return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
+    }
+}
+
+const uploadAvatar = async (req, res) => {
+    try {
+        req.user.avatar = req.file.buffer
+        await req.user.save()
+        res.send()
+    } catch (e) {
+        return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
+    }
+}
+
+const updateAvatar = async (req, res) => {
+    try {
+        req.user.avatar = req.file.buffer
+        await req.user.save()
+        res.send()
+    } catch (e) {
+        return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
     }
 }
 
@@ -228,5 +316,7 @@ module.exports = {
     sendResetPasswordLink,
     verifyUser,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    uploadAvatar,
+    updateAvatar
 }
