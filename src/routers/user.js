@@ -2,39 +2,42 @@ const express = require('express')
 const multer = require('multer')
 const User = require('../models/user')
 const userControllers = require('../controllers/user.controller')
-const auth = require('../middleware/auth')
+const authUser = require('../middleware/auth')
 const router = new express.Router()
 const { validate } = require('../validator/express.validator')
 const { validateReq } = require('../../public/utils')
+const passport = require('passport')
 
-router.post('/register', validate("registerUser"), validateReq, userControllers.registerUser)
+router.post('/register', validate('registerUser'), validateReq, userControllers.registerUser)
 router.post('/verifyEmail/:userid/:token', userControllers.verifyUserEmail)
-router.post('/users/login', validate("loginUser"), validateReq, userControllers.loginUser)
-router.post('/users/logout', auth, userControllers.logoutUser)
-router.get('/users/me', auth, userControllers.readUser)
+router.post('/login', validate('loginUser'), validateReq, userControllers.loginUser)
+router.post('/logout', authUser, userControllers.logoutUser)
+router.get('/me', authUser, userControllers.readUser)
 
-router.patch('/users/me', validate("updateUser"), auth, userControllers.updateUser)
+router.patch('/updateUser', authUser, userControllers.updateProfile)
 
-const upload = multer({
-   // dest: 'avatars',
-    limits: {
-        fileSize: 1000000
-    },
-    fileFilter(req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-            return cb(new Error('Please upload an image'))
-        }
-        cb(undefined, true)
-    }
-})
-router.post('/users/me/avatar', auth, upload.single('avatar'), userControllers.uploadAvatar)
-router.patch('/users/me/avatar/update', auth, upload.single('avatar'), userControllers.updateAvatar)
+// const upload = multer({
+//    // dest: 'avatars',
+//     limits: {
+//         fileSize: 1000000
+//     },
+//     fileFilter(req, file, cb) {
+//         if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+//             return cb(new Error('Please upload an image'))
+//         }
+//         cb(undefined, true)
+//     }
+// })
+//router.post('/users/me/avatar', auth, upload.single('avatar'), userControllers.uploadAvatar)
+
+//Configuration for Multer
+const upload = multer({ dest: "assets/avatar" });
+router.post('/updateAvatar', authUser, upload.single("myFile"), userControllers.updateAvatar)
 
 // forgot password 
-router.post('/sendForgotPasswordLink', validate("sendForgotPasswordLink"),userControllers.sendResetPasswordLink)
-router.post('/verifyUser', userControllers.verifyUser)
-router.patch('/forgotPassword/:id', userControllers.forgotPassword)
-
-router.patch('/users/me/resetPassword', auth, userControllers.resetPassword)
+router.post('/sendForgotPasswordLink', validate('sendForgotPasswordLink'), validateReq, userControllers.sendResetPasswordLink)
+// router.post('/verifyUser', userControllers.verifyUser)
+router.post('/forgotPassword/:id', validate('forgotPassword'), validateReq, userControllers.forgotPassword)
+router.post('/resetPassword', validate('resetPassword'), validateReq, authUser, userControllers.resetPassword)
 
 module.exports = router

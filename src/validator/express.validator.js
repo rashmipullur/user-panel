@@ -16,15 +16,22 @@ module.exports.validate = function (method) {
                 VALIDATE.PASSWORD
             ]
         }
-        case 'updateUser': {
-            return [
-                VALIDATE.NAME,
-                VALIDATE.PHONENO
-            ]
-        }
         case 'sendForgotPasswordLink': {
             return [
                 VALIDATE.EMAIL
+            ]
+        }
+        case 'forgotPassword': {
+            return [
+                VALIDATE.PASSWORD,
+                VALIDATE.CONFIRMPASSWORD
+            ]
+        }
+        case 'resetPassword': {
+            return [
+                VALIDATE.CURRENTPASSWORD,
+                VALIDATE.PASSWORD,
+                VALIDATE.CONFIRMPASSWORD
             ]
         }
 

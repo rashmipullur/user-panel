@@ -42,10 +42,14 @@ const userSchema = new mongoose.Schema({
           },
         required: true
     },
+    active: {
+        type: Boolean,
+        default: true
+    },
     avatar: {
         type: Buffer,
         // type: String,
-        default: "assets/profile-pic.png",
+        default: "assets/avatar/profile-pic.jpg",
         trim: true
     },
     isVerified: {

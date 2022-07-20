@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator')
 const User = require('../src/models/user')
 const UserSession = require('../src/models/userSession.model')
 const jwt = require('jsonwebtoken')
+const HTTP = require('../constants/responseCode.constant')
 
 function validateReq(req, res, next) {
     const errors = validationResult(req)
@@ -22,7 +23,7 @@ async function encryptUserModel(data) {
 async function createSessionAndJwtToken(user) {
     try {
         const expAt = (new Date().getTime() / 1000) + 86400
-        const userSession = await new UserSession({ userid: user.id, isActive: true, expAt: toFixed() }).save()
+        const userSession = await new UserSession({ userid: user.id, isActive: true, expAt: expAt.toFixed() }).save()
         if (!userSession) {
             throw("Unable to store user session!")
         }
@@ -36,8 +37,21 @@ async function createSessionAndJwtToken(user) {
     }
 }
 
+async function formateUserData(user){
+    user = user.toObject()
+    delete user.password
+    delete user.updatedAt
+    delete user.createdAt
+    delete user.__enc_name
+    delete user.__enc_email
+    delete user.__enc_phoneNo
+    delete user.__enc_avatar
+    return user
+}
+
 module.exports = {
     validateReq,
     encryptUserModel,
-    createSessionAndJwtToken
+    createSessionAndJwtToken,
+    formateUserData
 }

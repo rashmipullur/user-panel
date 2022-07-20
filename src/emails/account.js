@@ -74,9 +74,25 @@ const sendVerifyEmail = (user, link) => {
   })
 }
 
+const sendForgotPasswordLink = (toEmail, link) => {
+  transport.sendMail({
+    from: 'rashmipullur1@gmail.com',
+    to: toEmail,
+    subject: 'Reset Password',
+    text: `Hello. please click the link to set Password, ${link}`
+  }, function(err, info) {
+    if (err) {
+      console.log(err)
+    } else {
+      console.log(info)
+    }
+  })
+}
+
 module.exports = {
     sendWelcomeEmail,
     sendCancellationEmail,
     sendOTPEmail,
-    sendVerifyEmail
+    sendVerifyEmail,
+    sendForgotPasswordLink
 }
