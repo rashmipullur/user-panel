@@ -397,7 +397,6 @@ const viewAvatar = (req, res) => {
     const file = req.user.avatar
     const path = 'uploads' + file
     console.log("path -> " + path)
-    
     res.download(path)
 }
 
