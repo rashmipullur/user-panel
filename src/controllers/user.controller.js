@@ -5,7 +5,7 @@ const multer = require('multer')
 const User = require('../models/user')
 const UserSession = require('../models/userSession.model')
 const HTTP = require('../../constants/responseCode.constant')
-const uploadAvatar = require('../middleware/upload')
+const upload = require('../middleware/upload')
 
 const { encryptUserModel, createSessionAndJwtToken, formateUserData } = require('../../public/utils')
 const { sendWelcomeEmail, sendOTPEmail, sendVerifyEmail, sendForgotPasswordLink } = require('../emails/account')
@@ -376,30 +376,6 @@ async function resetPassword (req, res) {
     }
 }
 
-
-const multerStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, "uploads");
-    },
-    filename: (req, file, cb) => {
-      const ext = file.mimetype.split("/")[1];
-      cb(null, `/user-${file.fieldname}-${Date.now()}.${ext}`);
-    },
-});
-
-const maxSize = 1 * 1000 * 1000;
-
-const upload = multer({
-    storage: multerStorage,
-    limits: { fileSize: maxSize },
-    fileFilter(req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-            return cb(new Error('Please upload a valid image file'))
-        }
-        cb(undefined, true)
-    }
-}).single('avatar')
-
 const updateAvatar = (req, res) => {
     upload(req, res, function (err) {
         if (err instanceof multer.MulterError) {
@@ -422,14 +398,6 @@ const viewAvatar = (req, res) => {
     const path = 'uploads' + file
     console.log("path -> " + path)
     
-    // res.download(path, file, function (err) {
-    //     if (err) {
-    //         return res.status(500).send({ "error": 'Unexpected error occured.' })
-    //     } else {
-    //         return res.status(200).send({ "message": 'success' })
-    //     }
-    // })
-
     res.download(path)
 }
 

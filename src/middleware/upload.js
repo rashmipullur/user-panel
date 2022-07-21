@@ -1,18 +1,6 @@
 const multer = require('multer')
-const HTTP = require('../../constants/responseCode.constant')
-const maxSize = 1 * 1000 * 1000
 
-
-const multerFilter = (req, file, cb) => {
-    if (file.mimetype.split("/")[1] === "jpg" || file.mimetype.split("/")[1] === "jpeg" || file.mimetype.split("/")[1] === "png" ) {
-        cb(null, true)
-    } else {
-        req.fileValidationError = "please select valid image format!"
-        return cb(null, false, new Error("Only .jpg, .jpeg and .png format allowed!"))
-    }
-}
-
-const storeAvatar = multer.diskStorage({
+const multerStorage = multer.diskStorage({
     destination: (req, file, cb) => {
       cb(null, "uploads");
     },
@@ -22,10 +10,18 @@ const storeAvatar = multer.diskStorage({
     },
 });
 
-const uploadAvatar = multer({
-    fileFilter: multerFilter,
-    limits: { fileSize: maxSize },
-    storage: storeAvatar
-})
+const maxSize = 1 * 1000 * 1000;
 
-module.exports = uploadAvatar
+const upload = multer({
+    storage: multerStorage,
+    limits: { fileSize: maxSize },
+    fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+            return cb(new Error('Please upload a valid image file'))
+        }
+        cb(undefined, true)
+    }
+}).single('avatar')
+
+
+module.exports = upload
