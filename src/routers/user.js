@@ -16,9 +16,8 @@ router.post('/logout', authUser, userControllers.logoutUser)
 router.get('/me', authUser, userControllers.readUser)
 
 router.patch('/updateUser', authUser, userControllers.updateProfile)
-
-router.post('/updateAvatar', authUser , userControllers.updateAvatar)
-
+router.post('/updateAvatar', authUser, userControllers.updateAvatar)
+router.get('/userAvatar', authUser, userControllers.viewAvatar)
 
 // forgot password 
 router.post('/sendForgotPasswordLink', validate('sendForgotPasswordLink'), validateReq, userControllers.sendResetPasswordLink)

@@ -184,7 +184,6 @@ const readUser = async (req, res) => {
     res.send(req.user)
 }
 
-
 async function updateProfile(req, res) {
     try {
         const updates = Object.keys(req.body)
@@ -417,6 +416,22 @@ const updateAvatar = (req, res) => {
       })
 }
 
+const viewAvatar = (req, res) => {
+    
+    const file = req.user.avatar
+    const path = 'uploads' + file
+    //console.log("path -> " + path)
+    
+    // res.download(path, file, function (err) {
+    //     if (err) {
+    //         return res.status(500).send({ "error": 'Unexpected error occured.' })
+    //     } else {
+    //         return res.status(200).send({ "message": 'success' })
+    //     }
+    // })
+    res.download(path)
+}
+
 module.exports = {
     registerUser,
     verifyUserEmail,
@@ -427,5 +442,6 @@ module.exports = {
     sendResetPasswordLink,
     forgotPassword,
     resetPassword,
-    updateAvatar
+    updateAvatar,
+    viewAvatar
 }
