@@ -19,7 +19,9 @@ app.use(express.json())
 app.use(passport.initialize())
 require('../config/passport')
 const port = process.env.PORT
-
+//render image from public directory
+ app.use(express.static('uploads'));
+  app.use('/', express.static('uploads'));
 
 app.use(userRouter)
 app.use(taskRouter)

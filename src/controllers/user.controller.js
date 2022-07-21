@@ -420,7 +420,7 @@ const viewAvatar = (req, res) => {
     
     const file = req.user.avatar
     const path = 'uploads' + file
-    //console.log("path -> " + path)
+    console.log("path -> " + path)
     
     // res.download(path, file, function (err) {
     //     if (err) {
@@ -429,6 +429,7 @@ const viewAvatar = (req, res) => {
     //         return res.status(200).send({ "message": 'success' })
     //     }
     // })
+
     res.download(path)
 }
 
