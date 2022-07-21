@@ -31,8 +31,7 @@ function authUser(req, res, next) {
             }
 
             const { user, sessionId } = userData
-            console.log("user -> " + userData)
-        
+            
             if (!user) {
                 return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.UNAUTHORIZED, 'message': 'Please authenticate your-self', data: {} });
             }

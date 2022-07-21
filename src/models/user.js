@@ -47,8 +47,8 @@ const userSchema = new mongoose.Schema({
         default: true
     },
     avatar: {
-        type: Buffer,
-        // type: String,
+        //type: Buffer,
+        type: String,
         default: "assets/avatar/profile-pic.jpg",
         trim: true
     },

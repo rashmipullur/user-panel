@@ -12,31 +12,16 @@ router.post('/register', validate('registerUser'), validateReq, userControllers.
 router.post('/verifyEmail/:userid/:token', userControllers.verifyUserEmail)
 router.post('/login', validate('loginUser'), validateReq, userControllers.loginUser)
 router.post('/logout', authUser, userControllers.logoutUser)
+
 router.get('/me', authUser, userControllers.readUser)
 
 router.patch('/updateUser', authUser, userControllers.updateProfile)
 
-// const upload = multer({
-//    // dest: 'avatars',
-//     limits: {
-//         fileSize: 1000000
-//     },
-//     fileFilter(req, file, cb) {
-//         if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-//             return cb(new Error('Please upload an image'))
-//         }
-//         cb(undefined, true)
-//     }
-// })
-//router.post('/users/me/avatar', auth, upload.single('avatar'), userControllers.uploadAvatar)
+router.post('/updateAvatar', authUser , userControllers.updateAvatar)
 
-//Configuration for Multer
-const upload = multer({ dest: "assets/avatar" });
-router.post('/updateAvatar', authUser, upload.single("myFile"), userControllers.updateAvatar)
 
 // forgot password 
 router.post('/sendForgotPasswordLink', validate('sendForgotPasswordLink'), validateReq, userControllers.sendResetPasswordLink)
-// router.post('/verifyUser', userControllers.verifyUser)
 router.post('/forgotPassword/:id', validate('forgotPassword'), validateReq, userControllers.forgotPassword)
 router.post('/resetPassword', validate('resetPassword'), validateReq, authUser, userControllers.resetPassword)
 

@@ -5,6 +5,7 @@ const multer = require('multer')
 const User = require('../models/user')
 const UserSession = require('../models/userSession.model')
 const HTTP = require('../../constants/responseCode.constant')
+const uploadAvatar = require('../middleware/upload')
 
 const { encryptUserModel, createSessionAndJwtToken, formateUserData } = require('../../public/utils')
 const { sendWelcomeEmail, sendOTPEmail, sendVerifyEmail, sendForgotPasswordLink } = require('../emails/account')
@@ -183,43 +184,15 @@ const readUser = async (req, res) => {
     res.send(req.user)
 }
 
-// const updateUser = async (req, res) => {
-//     const updates = Object.keys(req.body)
-//     const allowedUpdates = ['name','phoneNo']
-//     const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
-
-//     if (!isValidOperation) {
-//         return res.status(HTTP.BAD_REQUEST).send({ error: 'Invalid updates!' })
-//     }
-
-//     try {
-//         updates.forEach((update) => req.user[update] = req.body[update])
-//         await req.user.save() 
-//         res.send(req.user)
-//     } catch(e) {
-//         res.status(HTTP.BAD_REQUEST).send({ 'status': false, 'message': 'Something went wrong!', data: {} })
-//     }
-// }
 
 async function updateProfile(req, res) {
     try {
-        const updates = Object.entries(req.body)
+        const updates = Object.keys(req.body)
         if (updates.length === 0) {
             return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, "message": "No changes available for update!", data: {} })
         }
 
         const allowedUpdates = ['name','phoneNo']
-
-        // const isValidOperation = updates.every((updates) => {
-        //     if (allowedUpdates.includes(updates[0])) {
-        //         if (updates[0] === "name" && updates[1].toString().length <= 0) {
-        //             return false
-        //         }
-        //         return true
-        //     } else {
-        //         return false
-        //     }
-        // })
 
         const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
 
@@ -370,22 +343,6 @@ const forgotPassword = async (req, res) => {
 
 }
 
-// const resetPassword = async (req, res) => {
-//     try {
-//         if (req.body.password === req.body.confirmPassword) {
-//             const passwordHash = bcrypt.hashSync(req.body.password, 8)
-//             await User.updateOne(
-//                 { "_id" : req.user._id},
-//                 { $set: {"password": passwordHash} }
-//             )
-//             res.send(req.user)
-//         } else {
-//             res.send("Passwords don't match")
-//         }
-//     } catch(e) {
-//         return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
-//     }
-// }
 
 async function resetPassword (req, res) {
     try {
@@ -423,80 +380,44 @@ async function resetPassword (req, res) {
 }
 
 
+const multerStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, "uploads");
+    },
+    filename: (req, file, cb) => {
+      const ext = file.mimetype.split("/")[1];
+      cb(null, `/user-${file.fieldname}-${Date.now()}.${ext}`);
+    },
+});
 
-const updateAvatar = async (req, res) => {
-    try {
-        console.log(req.file);
-    } catch(e) {
-        res.status(400).send({ 'status': false, 'message': 'Something went wrong!', data: {} })
+const maxSize = 1 * 1000 * 1000;
+
+const upload = multer({
+    storage: multerStorage,
+    limits: { fileSize: maxSize },
+    fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+            return cb(new Error('Please upload a valid image file'))
+        }
+        cb(undefined, true)
     }
+}).single('avatar')
+
+const updateAvatar = (req, res) => {
+    upload(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, "message": 'A Multer error occurred when uploading.', data: {} })
+        } else if (err) {
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, "message": 'An unknown error occurred when uploading.', data: {} })
+        }
+        User.findByIdAndUpdate({ _id: req.user._id }, { avatar: req.file.filename}, { new: true }).then( () => {
+            return res.status(HTTP.SUCCESS).send({ 'status': true, 'code': HTTP.SUCCESS, "message": "Avatar updated successfully!", data: {} })
+        }).catch(e => {
+            console.log(e)
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, "message": "Something went wrong!", data: {} })
+        })
+      })
 }
-
-// const uploadAvatar = async (req, res) => {
-//     try {
-//         req.user.avatar = req.file.buffer
-//         await req.user.save()
-//         res.send()
-//     } catch (e) {
-//         return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
-//     }
-// }
-
-// const updateAvatar = async (req, res) => {
-//     try {
-//         req.user.avatar = req.file.buffer
-//         await req.user.save()
-//         res.send()
-//     } catch (e) {
-//         return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.INTERNAL_SERVER_ERROR, 'message': 'Something went wrong!', data: {} })
-//     }
-// }
-
-// async function updateAvatar (req, res) {
-//     try {
-//         uploadAvatar(req, res, async function(error) {
-//             if (error) {
-//                 if (error.code ==  'LIMIT_FILE_SIZE') {
-//                     return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, "message": "File Size is too large. Allowed file size is 1mb", data: {} })
-//                 }
-//             }
-
-//             if (req.fileValidationError) {
-//                 return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, "message": req.fileValidationError, data: {} })
-//             }
-
-//             if (req.file === undefined) {
-//                 return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, "message": "Please select an image!", data: {} })
-//             }
-
-//             const avatar = await req.file.key
-
-//             const _id = req.user._id.toString()
-//             const user = await User.findOne({ _id })
-//             if(!user) {
-//                 await deleteObject(avatar, res)
-//                 return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.NOT_FOUND, "message": "User does not exist!", data: {} })
-//             }
-//             const oldAvatar = await user.avatar
-//             user.avatar = avatar
-
-//             await user.save().then(async (userinfo) => {
-//                 userinfo.decryptFieldsSync({ __secret__: process.env.DATABASE_ACCESS_KEY })
-//                 userinfo = await formateUserData(userinfo)
-//                 const key = oldAvatar
-//                 if(key && key !== "avatar/profile-pic.jpg") {
-//                     await deleteObject(key, res)
-//                     return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.SUCCESS, "message": "new image uploaded", data: {} })
-//                 } else {
-//                     return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.SUCCESS, "message": "new image uploaded", data: {} })
-//                 }
-//             })
-//         })
-//     } catch(e) {
-//         console.log(e)
-        
-//     }
-// }
 
 module.exports = {
     registerUser,
@@ -508,7 +429,6 @@ module.exports = {
     sendResetPasswordLink,
     forgotPassword,
     resetPassword,
-    // uploadAvatar,
     updateAvatar
 
 }
