@@ -229,7 +229,6 @@ async function updateProfile(req, res) {
     }
 }
 
-// let otp 
 const sendResetPasswordLink = async (req, res) => {
     // const email = req.body.email
     // console.log(email)
@@ -301,7 +300,6 @@ const sendResetPasswordLink = async (req, res) => {
     }
 
 }
-
 
 const forgotPassword = async (req, res) => {
     
@@ -430,5 +428,4 @@ module.exports = {
     forgotPassword,
     resetPassword,
     updateAvatar
-
 }
