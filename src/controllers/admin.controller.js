@@ -1,12 +1,10 @@
 var ObjectId = require('mongoose').Types.ObjectId
 const User = require('../models/user')
-const UserSession = require('../models/userSession.model')
 const AdminSession = require('../models/adminSession.model')
 const jwt = require('jsonwebtoken')
 const HTTP = require('../../constants/responseCode.constant')
 const { hashSync, compareSync } = require('bcryptjs')
-const { encryptUserModel, createSessionAndJwtToken, formateUserData } = require('../../public/utils')
-const { sendForgotPasswordLink } = require('../emails/account');
+const { encryptUserModel, createSessionAndJwtToken, formateUserData } = require('../../public/utils');
 
 (async function defaultAdminsignup(req, res) {
     try {

@@ -8,8 +8,7 @@ const HTTP = require('../../constants/responseCode.constant')
 const upload = require('../middleware/upload')
 
 const { encryptUserModel, createSessionAndJwtToken, formateUserData } = require('../../public/utils')
-const { sendWelcomeEmail, sendOTPEmail, sendVerifyEmail, sendForgotPasswordLink } = require('../emails/account')
-
+const { sendVerifyEmail, sendForgotPasswordLink } = require('../emails/account')
 
 const registerUser = async (req, res) => {
     //const user = new User(req.body)
@@ -228,6 +227,30 @@ async function updateProfile(req, res) {
     }
 }
 
+const updateAvatar = (req, res) => {
+    upload(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, "message": 'A Multer error occurred when uploading.', data: {} })
+        } else if (err) {
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, "message": 'An unknown error occurred when uploading.', data: {} })
+        }
+        User.findByIdAndUpdate({ _id: req.user._id }, { avatar: req.file.filename}, { new: true }).then( () => {
+            return res.status(HTTP.SUCCESS).send({ 'status': true, 'code': HTTP.SUCCESS, "message": "Avatar updated successfully!", data: {} })
+        }).catch(e => {
+            console.log(e)
+            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, "message": "Something went wrong!", data: {} })
+        })
+      })
+}
+
+const viewAvatar = (req, res) => {
+    
+    const file = req.user.avatar
+    const path = 'uploads' + file
+    console.log("path -> " + path)
+    res.download(path)
+}
+
 const sendResetPasswordLink = async (req, res) => {
     try {
         const { email } = req.body
@@ -303,7 +326,6 @@ const forgotPassword = async (req, res) => {
 
 }
 
-
 async function resetPassword (req, res) {
     try {
         const { currentPassword, password, confirmPassword } = req.body
@@ -339,40 +361,20 @@ async function resetPassword (req, res) {
     }
 }
 
-const updateAvatar = (req, res) => {
-    upload(req, res, function (err) {
-        if (err instanceof multer.MulterError) {
-            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.BAD_REQUEST, "message": 'A Multer error occurred when uploading.', data: {} })
-        } else if (err) {
-            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, "message": 'An unknown error occurred when uploading.', data: {} })
-        }
-        User.findByIdAndUpdate({ _id: req.user._id }, { avatar: req.file.filename}, { new: true }).then( () => {
-            return res.status(HTTP.SUCCESS).send({ 'status': true, 'code': HTTP.SUCCESS, "message": "Avatar updated successfully!", data: {} })
-        }).catch(e => {
-            console.log(e)
-            return res.status(HTTP.SUCCESS).send({ "status": false, 'code': HTTP.INTERNAL_SERVER_ERROR, "message": "Something went wrong!", data: {} })
-        })
-      })
-}
-
-const viewAvatar = (req, res) => {
-    
-    const file = req.user.avatar
-    const path = 'uploads' + file
-    console.log("path -> " + path)
-    res.download(path)
-}
 
 module.exports = {
     registerUser,
     verifyUserEmail,
     loginUser,
     logoutUser,
+
     readUser,
+
     updateProfile,
+    updateAvatar,
+    viewAvatar,
+
     sendResetPasswordLink,
     forgotPassword,
-    resetPassword,
-    updateAvatar,
-    viewAvatar
+    resetPassword
 }
