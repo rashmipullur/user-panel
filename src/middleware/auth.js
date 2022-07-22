@@ -3,6 +3,7 @@ const passport = require('passport')
 const HTTP = require('../../constants/responseCode.constant')
 var ObjectId = require('mongoose').Types.ObjectId
 const UserSession = require('../models/userSession.model')
+const AdminSession = require('../models/adminSession.model')
 const User = require('../models/user')
 
 // verify the authentication token
@@ -61,4 +62,45 @@ function authUser(req, res, next) {
     })(req, res, next);
 }
 
-module.exports = authUser
+function authAdmin(req, res, next) {
+    passport.authenticate('jwt', { session: false }, async function (err, userData, info, status) {
+        try {
+            if (err) {
+                console.log(err)
+                return next(err)
+            }
+
+            const { user, sessionId } = userData
+
+            if (!user || user.role !== "admin") {
+                return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.UNAUTHORIZED, 'message': 'Please authenticate your-self', data: {} });
+            }
+
+            //if user blocked
+            if (user && user.active === false) {
+                return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.NOT_ALLOWED, 'message': 'Your Account is De-activated!', data: {} })
+            }
+
+            if (!sessionId || !ObjectId.isValid(sessionId)) {
+                return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.NOT_ALLOWED, 'message': 'Invalid session!', data: {} })
+            }
+
+            const adminSession = await AdminSession.findOne({ _id: sessionId, adminid: user._id, isActive: true })
+            if (!adminSession) {
+                return res.status(HTTP.SUCCESS).send({ 'status': false, 'code': HTTP.BAD_REQUEST, 'message': 'User session is expired!', data: {} })
+            }
+
+            req.user = user
+            req.user.sessionId = sessionId
+            return next()
+        } catch (e) {
+            console.log("error from admin middleware", e);
+            return next()
+        }
+    })(req, res, next);
+}
+
+module.exports = {
+    authUser,
+    authAdmin
+}

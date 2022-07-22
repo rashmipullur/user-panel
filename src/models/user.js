@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
             },
             message: props => `${props.v} is not a valid phone number!`
           },
-        required: true
+        //required: true
     },
     active: {
         type: Boolean,
@@ -55,6 +55,11 @@ const userSchema = new mongoose.Schema({
     isVerified: {
         type: Boolean,
         default: false
+    },
+    role: {
+        type: String,
+        default: 'user',
+        trim: true
     },
     tokens: [{
         token: {

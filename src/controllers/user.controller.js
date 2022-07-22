@@ -229,43 +229,6 @@ async function updateProfile(req, res) {
 }
 
 const sendResetPasswordLink = async (req, res) => {
-    // const email = req.body.email
-    // console.log(email)
-    // try {
-    //     otp = Math.random()
-    //     otp = otp * 1000000
-    //     otp = parseInt(otp)
-
-    //     var transport = nodemailer.createTransport({
-    //         host: "smtp.mailtrap.io",
-    //         port: 2525,
-    //         auth: {
-    //         user: "e11d19bc3faffe",
-    //         pass: "524f075ca3a596"
-    //         }
-    //         })
-        
-    //     transport.sendMail({
-    //         from: 'rashmipullur1@gmail.com',
-    //         to: email,
-    //         subject: 'Otp for registration is:',
-    //         html: "<h3>OTP for account verification is </h3>" + "<h1 style='font-weight:bold;'>" + otp + "</h1>", // html body
-    //         text: `hello.` // template string
-    //     }, function(err, info) {
-    //         if (err) {
-    //           console.log(err)
-    //         } else {
-    //           console.log(info)
-    //           res.render('otp')
-    //         }
-    //      })
-
-    //     // sendOTPEmail(req.user.email, req.user.name)
-    //     res.send('Check email, verify and change password')
-    // } catch(e) {
-    //     res.status(500).send(e)
-    // }
-
     try {
         const { email } = req.body
         const encData = await encryptUserModel({ email })

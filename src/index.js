@@ -3,10 +3,9 @@ require('dotenv').config()
 require('./db/mongoose')
 const passport = require('passport')
 const cors = require('cors')
-const User = require('./models/user')
-const Task = require('./models/task')
-const userRouter = require('./routers/user')
-const taskRouter = require('./routers/task')
+const userRouter = require('./routes/user')
+// const taskRouter = require('./routes/task')
+// const adminRouter = require('./routes/admin.route')
 
 // cors: (Cross Origin Resource Sharing) will add a header to the URL and allow an 
 // external url to correctly read the information on the URL called. 
@@ -20,12 +19,12 @@ app.use(passport.initialize())
 require('../config/passport')
 const port = process.env.PORT
 //render image from public directory
- app.use(express.static('uploads'));
-  app.use('/', express.static('uploads'));
+app.use(express.static('uploads'));
+app.use('/', express.static('uploads'));
 
-app.use(userRouter)
-app.use(taskRouter)
-
+// app.use(userRouter)
+// app.use(taskRouter)
+// app.use(adminRouter)
 
 app.listen(port, () => {
     console.log('Server is up on a port ' + port)
