@@ -42,6 +42,8 @@ async function formateUserData(user){
     delete user.password
     delete user.updatedAt
     delete user.createdAt
+    delete user.tokens
+    delete user.__v
     delete user.__enc_name
     delete user.__enc_email
     delete user.__enc_phoneNo
